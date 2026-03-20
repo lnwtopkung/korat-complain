@@ -6,15 +6,22 @@
 เปิดเบราว์เซอร์: http://localhost:8765
 """
 
-import json, time, threading
+import json, time, threading, os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import requests
 
-TOKEN    = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJrb3JhdENpdHkiLCJleHAiOjE3NzY1MTY2NzAsImlhdCI6MTc3MzkyNDY3MCwia2V5IjoiNWRmMDY1NzA0NmUwZmIwMDAxNmRiMmUwIn0.kxQ9bKD2hdwE1mKKqwgzl_kYr1jXLCKPb0zYyzzjNic"
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+TOKEN    = os.environ.get("TOKEN")
 BASE_URL = "https://prapa.koratcity.go.th/koratCity/getComplain"
-import os
 PORT = int(os.environ.get("PORT", 8765))
+
 
 HEADERS = {
     "accept": "application/json",
