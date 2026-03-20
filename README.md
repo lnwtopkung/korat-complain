@@ -1,4 +1,4 @@
-# Dashboard ร้องเรียน เทศบาลนครโคราช
+# Dashboard ร้องเรียน
 
 ## วิธี Deploy บน Railway
 
