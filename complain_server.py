@@ -1,5 +1,5 @@
 """
-เซิร์ฟเวอร์ข้อมูลร้องเรียน เทศบาลนครโคราช
+เซิร์ฟเวอร์ข้อมูลร้องเรียน เทศบาลนครราชสีมา
 วิธีใช้:
   pip install requests
   python complain_server.py
@@ -100,13 +100,13 @@ def get_data(force=False):
 HTML_PAGE = r"""<!DOCTYPE html>
 <html lang="th"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dashboard ร้องเรียน — เทศบาลนครโคราช</title>
+<title>Dashboard ร้องเรียน — เทศบาลนครราชสีมา</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Sarabun',sans-serif;background:#f4f6fb;color:#222;font-size:14px;}
-.bar{background:#1e3a8a;color:#fff;padding:0 20px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:99;}
+.bar{background:#14532d;color:#fff;padding:0 20px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:99;}
 .bar h1{font-size:16px;font-weight:700;flex:1;}
 #upd{font-size:12px;opacity:.75;white-space:nowrap;}
 .tbtn{padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-size:13px;font-family:'Sarabun',sans-serif;}
@@ -158,7 +158,7 @@ tr:hover td{background:#fafafa;}tr:last-child td{border-bottom:none;}
 </style></head><body>
 
 <div class="bar">
-  <h1>📊 Dashboard ร้องเรียน — เทศบาลนครโคราช</h1>
+  <h1>📊 Dashboard ร้องเรียน — เทศบาลนครราชสีมา</h1>
   <span id="upd">กำลังโหลด...</span>
   <button class="tbtn on" id="abtn" onclick="toggleAuto()">⏱ Auto 3ชม</button>
   <button class="tbtn" onclick="loadData(true)">↻ รีเฟรช</button>
@@ -593,7 +593,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     print("=" * 50)
-    print("  Dashboard ร้องเรียน เทศบาลนครโคราช")
+    print("  Dashboard ร้องเรียน เทศบาลนครราชสีมา")
     print("=" * 50)
     print(f"  กำลังดึงข้อมูลครั้งแรก...")
     get_data(force=True)
