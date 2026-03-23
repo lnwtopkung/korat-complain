@@ -19,7 +19,7 @@ BASE_URL = os.environ.get("COMPLAIN_API_URL", "https://prapa.koratcity.go.th/kor
 PORT = int(os.environ.get("PORT", 8765))
 CACHE_SEC = int(os.environ.get("CACHE_SEC", 10800))
 PAGE_SIZE = 100
-MIN_ID = 2512086  # ดึงตั้งแต่รายการนี้เป็นต้นไป
+MIN_ID = 2512086
 
 _cache = {"data": [], "ts": 0, "lock": threading.Lock(), "ready": False, "error": None}
 
@@ -49,7 +49,7 @@ def build_params(page, start_ts, end_ts):
             "sizeContents": PAGE_SIZE, "page": page, "keyWord": "", "startDate": start_ts,
             "endDate": end_ts, "orderBy": 2, "isGuest": 0, "_": int(time.time()*1000)}
 
-def fetch_live(days=730): # ดึงย้อนหลัง 2 ปีเพื่อให้ครอบคลุม ID ที่ต้องการ
+def fetch_live(days=730):
     if not TOKEN: raise Exception("Missing COMPLAIN_TOKEN")
     headers = {"accept": "application/json", "content-type": "application/json", "token": TOKEN,
                "x-requested-with": "XMLHttpRequest", "user-agent": "Mozilla/5.0",
@@ -67,15 +67,12 @@ def fetch_live(days=730): # ดึงย้อนหลัง 2 ปีเพื�
         r.raise_for_status()
         content = r.json().get("data", {}).get("content", [])
         rows.extend(content)
-        # เช็คว่าถ้าเจอ ID ที่เก่ากว่า MIN_ID มากๆ แล้วก็หยุดดึงได้ (Optimization)
-        if content and int(content[-1].get("complainId", 0)) < (MIN_ID - 1000):
-            break
+        if content and int(content[-1].get("complainId", 0)) < (MIN_ID - 1000): break
     return rows
 
 def perform_refresh():
     try:
         rows = fetch_live()
-        # กรองข้อมูลเอาแค่ ID >= MIN_ID
         slim = []
         for r in rows:
             cid = int(r.get("complainId", 0))
@@ -85,13 +82,12 @@ def perform_refresh():
                              "src": r.get("from",0), "dept": get_dept(r),
                              "od": r.get("overDueDate",0) or 0,
                              "create": r.get("createDate",0)})
-        
         with _cache["lock"]:
-            _cache["data"] = sorted(slim, key=lambda x: x["id"], reverse=True) # เรียงใหม่ล่าสุดขึ้นก่อน
+            _cache["data"] = sorted(slim, key=lambda x: x["id"], reverse=True)
             _cache["ts"] = time.time()
             _cache["ready"] = True
             _cache["error"] = None
-        print(f"[CACHE] Success: {len(slim)} items (Filtered from ID {MIN_ID})")
+        print(f"[CACHE] Success: {len(slim)} items")
     except Exception as e:
         with _cache["lock"]: _cache["error"] = str(e)
         print(f"[CACHE ERROR] {e}")
@@ -135,6 +131,7 @@ body{font-family:'Sarabun',sans-serif;background:#f4f6fb;color:#222;font-size:14
 .ml{font-size:11px;color:#888;margin-bottom:4px;}.mv{font-size:22px;font-weight:700;}
 .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
 .card{background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.card h3{font-size:13px;font-weight:600;color:#6b7280;margin-bottom:14px;}
 .chart-wrap{position:relative;width:100%;height:240px;}
 .tc{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
 table{width:100%;border-collapse:collapse;font-size:13px;}
@@ -142,10 +139,9 @@ th{background:#f9fafb;padding:12px;text-align:left;font-weight:600;color:#6b7280
 td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600;}
 .b0{background:#dbeafe;color:#1d4ed8;}.b1{background:#fef3c7;color:#92400e;}.b3{background:#dcfce7;color:#166534;}.b5{background:#f3f4f6;color:#374151;}
-.pag{display:flex;gap:5px;padding:15px;justify-content:center;align-items:center;background:#fff;border-top:1px solid #eee;}
+.pag{display:flex;gap:5px;padding:15px;justify-content:center;align-items:center;}
 .pb{padding:5px 12px;border:1px solid #ddd;background:#fff;cursor:pointer;border-radius:4px;font-size:13px;}
-.pb:hover{background:#f0f0f0;}.pb.active{background:#2563eb;color:#fff;border-color:#2563eb;}
-.pb:disabled{opacity:0.5;cursor:default;}
+.pb.active{background:#2563eb;color:#fff;border-color:#2563eb;}
 .mfil{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;}
 .mfil select{padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;}
 @media(max-width:700px){.chart-grid{grid-template-columns:1fr;}}
@@ -172,7 +168,8 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 <div class="page" id="page-monthly"><div class="con">
   <div class="mfil"><label>เดือน:</label><select id="sel-month" onchange="renderMonthly()"></select><label>หน่วยงาน:</label><select id="sel-mdept" onchange="renderMonthly()"></select></div>
   <div id="m-met" class="met"></div>
-  <div class="chart-grid"><div class="card"><h3>จำนวนรายเดือน</h3><div class="chart-wrap"><canvas id="c-mbar"></canvas></div></div><div class="card"><h3>สถานะ (Stacked)</h3><div class="chart-wrap"><canvas id="c-mstack"></canvas></div></div></div>
+  <div class="chart-grid"><div class="card"><h3>จำนวนรายเดือน</h3><div class="chart-wrap"><canvas id="c-mbar"></canvas></div></div><div class="card"><h3>สถานะรายเดือน (Stacked)</h3><div class="chart-wrap"><canvas id="c-mstack"></canvas></div></div></div>
+  <div class="chart-grid"><div class="card"><h3>หัวข้อยอดนิยม</h3><div class="chart-wrap" style="height:260px"><canvas id="c-mtopic"></canvas></div></div><div class="card"><h3>หน่วยงานรับผิดชอบ</h3><div class="chart-wrap" style="height:260px"><canvas id="c-mdept"></canvas></div></div></div>
 </div></div>
 <div class="page" id="page-list"><div class="con">
   <div class="fil" style="margin-bottom:15px;display:flex;gap:10px;"><input id="q" type="text" placeholder="🔍 ค้นหา ID / หัวข้อ..." style="flex:1;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb" oninput="applyFilter()"><select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รอดำเนินการ</option></select></div>
@@ -186,7 +183,7 @@ function monthKey(ts){if(!ts)return null;const d=new Date(ts);return d.getFullYe
 function monthLabel(k){if(!k)return'';const[y,m]=k.split('-');const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return mn[parseInt(m)-1]+' '+(parseInt(y)+543);}
 function countBy(arr,fn){const m={};arr.forEach(r=>{const k=fn(r);if(k)m[k]=(m[k]||0)+1;});return m;}
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
-function showPage(n){document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+n).classList.add('show');if(event)event.target.classList.add('active');if(n==='monthly')renderMonthly();}
+function showPage(n){document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+n).classList.add('show');if(event && event.target)event.target.classList.add('active');if(n==='monthly')renderMonthly();}
 async function loadData(f=false){
   document.getElementById('upd').textContent='กำลังโหลด...';document.getElementById('pbar').style.width='30%';
   try{
@@ -210,12 +207,10 @@ function applyFilter(){
 function renderList(){
   const s=(PG-1)*PER,sl=FILT.slice(s,s+PER),total=Math.ceil(FILT.length/PER);
   document.getElementById('tbody').innerHTML=sl.map(r=>`<tr><td><b>${r.id}</b></td><td>${fmtD(r.date)}</td><td>${r.topic}</td><td><span class="badge ${SC[r.status]||''}">${SM[r.status]||r.status}</span></td><td>${r.dept}</td></tr>`).join('');
-  let h=`<button class="pb" onclick="goPG(1)" ${PG==1?'disabled':''}>«</button>`;
-  h+=`<button class="pb" onclick="goPG(${PG-1})" ${PG==1?'disabled':''}>‹</button>`;
+  let h=`<button class="pb" onclick="goPG(1)" ${PG==1?'disabled':''}>«</button><button class="pb" onclick="goPG(${PG-1})" ${PG==1?'disabled':''}>‹</button>`;
   let start=Math.max(1,PG-2),end=Math.min(total,start+4);if(end-start<4)start=Math.max(1,end-4);
   for(let i=start;i<=end;i++)h+=`<button class="pb ${i==PG?'active':''}" onclick="goPG(${i})">${i}</button>`;
-  h+=`<button class="pb" onclick="goPG(${PG+1})" ${PG==total?'disabled':''}>›</button>`;
-  h+=`<button class="pb" onclick="goPG(${total})" ${PG==total?'disabled':''}>»</button>`;
+  h+=`<button class="pb" onclick="goPG(${PG+1})" ${PG==total?'disabled':''}>›</button><button class="pb" onclick="goPG(${total})" ${PG==total?'disabled':''}>»</button>`;
   document.getElementById('pag-controls').innerHTML=FILT.length?h:`ไม่พบข้อมูล`;
 }
 function goPG(p){PG=p;renderList();window.scrollTo(0,0);}
@@ -232,13 +227,24 @@ function renderDashCharts(){
 function populateMonthFilter(){
   const s=document.getElementById('sel-month'),mths=[...new Set(ALL.map(r=>monthKey(r.date)).filter(Boolean))].sort();
   s.innerHTML='<option value="">-- ทุกเดือน --</option>';mths.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=monthLabel(k);s.appendChild(o);});
+  const ds=document.getElementById('sel-mdept'),depts=[...new Set(ALL.map(r=>r.dept))].sort();
+  ds.innerHTML='<option value="">ทุกหน่วยงาน</option>';depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;ds.appendChild(o);});
 }
 function renderMonthly(){
-  const selM=document.getElementById('sel-month').value;let data=selM?ALL.filter(r=>monthKey(r.date)===selM):ALL;
-  const done=data.filter(r=>r.status===3).length,proc=data.filter(r=>r.status===1).length,wait=data.filter(r=>r.status===0).length;
-  document.getElementById('m-met').innerHTML=`<div class="m"><div class="ml">ทั้งหมด</div><div class="mv">${data.length.toLocaleString()}</div></div><div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" style="color:#16a34a">${done.toLocaleString()}</div></div><div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" style="color:#d97706">${proc.toLocaleString()}</div></div>`;
-  const mKeys=[...new Set(ALL.map(r=>monthKey(r.date)).filter(Boolean))].sort(),mCnt=countBy(ALL,r=>monthKey(r.date));
-  destroyChart('mbar');charts['mbar']=new Chart(document.getElementById('c-mbar'),{type:'bar',data:{labels:mKeys.map(monthLabel),datasets:[{label:'จำนวน',data:mKeys.map(k=>mCnt[k]),backgroundColor:mKeys.map(k=>k==selM?'#2563eb':'rgba(37,99,235,0.4)')}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  const selM=document.getElementById('sel-month').value,selD=document.getElementById('sel-mdept').value;
+  let data=ALL; if(selD) data=data.filter(r=>r.dept===selD);
+  const months=[...new Set(ALL.map(r=>monthKey(r.date)).filter(Boolean))].sort();
+  let mData=selM? data.filter(r=>monthKey(r.date)===selM) : data;
+  const done=mData.filter(r=>r.status===3).length,proc=mData.filter(r=>r.status===1).length,wait=mData.filter(r=>r.status===0).length;
+  document.getElementById('m-met').innerHTML=`<div class="m"><div class="ml">ทั้งหมด</div><div class="mv">${mData.length.toLocaleString()}</div></div><div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" style="color:#16a34a">${done.toLocaleString()}</div></div><div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" style="color:#d97706">${proc.toLocaleString()}</div></div>`;
+  const mCount=countBy(data,r=>monthKey(r.date));
+  destroyChart('mbar');charts['mbar']=new Chart(document.getElementById('c-mbar'),{type:'bar',data:{labels:months.map(monthLabel),datasets:[{label:'จำนวน',data:months.map(k=>mCount[k]||0),backgroundColor:months.map(k=>k==selM?'#2563eb':'rgba(37,99,235,0.4)')}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  const s3=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===3).length),s1=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===1).length),s0=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===0).length),s5=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===5).length);
+  destroyChart('mstack');charts['mstack']=new Chart(document.getElementById('c-mstack'),{type:'bar',data:{labels:months.map(monthLabel),datasets:[{label:'เสร็จสิ้น',data:s3,backgroundColor:'#22c55e'},{label:'ระหว่างดำเนินการ',data:s1,backgroundColor:'#f59e0b'},{label:'รอดำเนินการ',data:s0,backgroundColor:'#6366f1'},{label:'ยกเลิก',data:s5,backgroundColor:'#9ca3af'}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}}}});
+  const tCnt=countBy(mData,r=>r.topic),tTop=Object.entries(tCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  destroyChart('mtopic');charts['mtopic']=new Chart(document.getElementById('c-mtopic'),{type:'bar',data:{labels:tTop.map(e=>e[0]),datasets:[{data:tTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  const dCnt=countBy(mData,r=>r.dept),dTop=Object.entries(dCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  destroyChart('mdept');charts['mdept']=new Chart(document.getElementById('c-mdept'),{type:'bar',data:{labels:dTop.map(e=>e[0]),datasets:[{data:dTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
 }
 loadData();
 </script></body></html>"""
