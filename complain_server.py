@@ -60,8 +60,8 @@ def fetch_live(days=730):
     first.raise_for_status()
     d = first.json()
     if d.get("status") == 500: raise Exception(d.get("message"))
-    total_pages = d["data"]["totalPages"]
-    rows = list(d["data"]["content"])
+    total_pages = d.get("data", {}).get("totalPages", 0)
+    rows = list(d.get("data", {}).get("content", []))
     for page in range(1, total_pages):
         r = requests.get(BASE_URL, params=build_params(page, start_ts, end_ts), headers=headers, timeout=30)
         r.raise_for_status()
@@ -178,11 +178,11 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
     <select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รอดำเนินการ</option><option value="5">ยกเลิก</option></select>
     <select id="fl-dept" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกหน่วยงาน</option></select>
   </div>
-  <div class="tc"><table><thead><tr><th>ลำดับ</th><th>ID</th><th>วันที่</th><th>หัวข้อ</th><th>สถานะ</th><th>หน่วยงาน</th></tr></thead><tbody id="tbody"></tbody></table><div id="pag-controls" class="pag"></div></div>
+  <div class="tc"><table><thead><tr><th>ลำดับ</th><th>ID</th><th>วันที่</th><th>หัวข้อ</th><th>สถานะ</th><th>แหล่งที่มา</th><th>หน่วยงาน</th></tr></thead><tbody id="tbody"></tbody></table><div id="pag-controls" class="pag"></div></div>
 </div></div>
 <script>
 let ALL=[],FILT=[],PG=1,PER=10,charts={};
-const SM={0:'รอดำเนินการ',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'];
+const SM={0:'รอดำเนินการ',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'],FM={0:'ไลน์ OA',1:'แอป',2:'เว็บ',3:'โทรศัพท์',4:'เดินเรื่อง',5:'ไลน์'};
 function fmtD(ts){return ts?new Date(ts).toLocaleDateString('th-TH',{year:'2-digit',month:'short',day:'numeric'}):'-';}
 function monthKey(ts){if(!ts)return null;const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');}
 function monthLabel(k){if(!k)return'';const[y,m]=k.split('-');const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return mn[parseInt(m)-1]+' '+(parseInt(y)+543);}
@@ -211,7 +211,7 @@ function applyFilter(){
 }
 function renderList(){
   const s=(PG-1)*PER,sl=FILT.slice(s,s+PER),total=Math.ceil(FILT.length/PER);
-  document.getElementById('tbody').innerHTML=sl.map((r,i)=>`<tr><td style="color:#888">${s+i+1}</td><td><b>${r.id}</b></td><td>${fmtD(r.date)}</td><td>${r.topic}</td><td><span class="badge ${SC[r.status]||''}">${SM[r.status]||r.status}</span></td><td>${r.dept}</td></tr>`).join('');
+  document.getElementById('tbody').innerHTML=sl.map((r,i)=>`<tr><td style="color:#888">${s+i+1}</td><td><b>${r.id}</b></td><td>${fmtD(r.date)}</td><td>${r.topic}</td><td><span class="badge ${SC[r.status]||''}">${SM[r.status]||r.status}</span></td><td>${FM[r.src]||r.src}</td><td>${r.dept}</td></tr>`).join('');
   let h=`<button class="pb" onclick="goPG(1)" ${PG==1?'disabled':''}>«</button><button class="pb" onclick="goPG(${PG-1})" ${PG==1?'disabled':''}>‹</button>`;
   let start=Math.max(1,PG-2),end=Math.min(total,start+4);if(end-start<4)start=Math.max(1,end-4);
   for(let i=start;i<=end;i++)h+=`<button class="pb ${i==PG?'active':''}" onclick="goPG(${i})">${i}</button>`;
