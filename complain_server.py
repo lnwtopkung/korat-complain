@@ -151,18 +151,18 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 <div class="nav"><button class="nav-btn active" onclick="showPage('dash')">📊 Dashboard</button><button class="nav-btn" onclick="showPage('monthly')">📅 รายเดือน</button><button class="nav-btn" onclick="showPage('list')">📋 รายการ</button></div>
 <div class="page show" id="page-dash"><div class="con">
   <div class="met">
-    <div class="m"><div class="ml">ทั้งหมด</div><div class="mv" id="m0">—</div></div>
-    <div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" id="m1">—</div></div>
-    <div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" id="m2">—</div></div>
-    <div class="m"><div class="ml">รอดำเนินการ</div><div class="mv" id="m3">—</div></div>
+    <div class="m"><div class="ml">ทั้งหมด</div><div class="mv" id="m0" style="color:#2563eb">—</div></div>
+    <div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" id="m1" style="color:#16a34a">—</div></div>
+    <div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" id="m2" style="color:#d97706">—</div></div>
+    <div class="m"><div class="ml">รอดำเนินการ</div><div class="mv" id="m3" style="color:#6366f1">—</div></div>
   </div>
   <div class="chart-grid">
     <div class="card"><h3>แนวโน้มรายเดือน</h3><div class="chart-wrap"><canvas id="c-trend"></canvas></div></div>
     <div class="card"><h3>สัดส่วนสถานะ</h3><div class="chart-wrap"><canvas id="c-status"></canvas></div></div>
   </div>
   <div class="chart-grid">
-    <div class="card"><h3>หัวข้อร้องเรียนสูงสุด 10 อันดับ</h3><div class="chart-wrap"><canvas id="c-topic"></canvas></div></div>
-    <div class="card"><h3>หน่วยงานรับผิดชอบ</h3><div class="chart-wrap"><canvas id="c-dept"></canvas></div></div>
+    <div class="card"><h3>หัวข้อร้องเรียนสูงสุด 10 อันดับ</h3><div class="chart-wrap" style="height:260px"><canvas id="c-topic"></canvas></div></div>
+    <div class="card"><h3>หน่วยงานรับผิดชอบ</h3><div class="chart-wrap" style="height:260px"><canvas id="c-dept"></canvas></div></div>
   </div>
 </div></div>
 <div class="page" id="page-monthly"><div class="con">
@@ -172,7 +172,7 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
   <div class="chart-grid"><div class="card"><h3>หัวข้อยอดนิยม</h3><div class="chart-wrap" style="height:260px"><canvas id="c-mtopic"></canvas></div></div><div class="card"><h3>หน่วยงานรับผิดชอบ</h3><div class="chart-wrap" style="height:260px"><canvas id="c-mdept"></canvas></div></div></div>
 </div></div>
 <div class="page" id="page-list"><div class="con">
-  <div class="fil" style="margin-bottom:15px;display:flex;gap:10px;"><input id="q" type="text" placeholder="🔍 ค้นหา ID / หัวข้อ..." style="flex:1;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb" oninput="applyFilter()"><select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รอดำเนินการ</option></select></div>
+  <div class="fil" style="margin-bottom:15px;display:flex;gap:10px;"><input id="q" type="text" placeholder="🔍 ค้นหา ID / หัวข้อ..." style="flex:1;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb" oninput="applyFilter()"><select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รอดำเนินการ</option><option value="5">ยกเลิก</option></select></div>
   <div class="tc"><table><thead><tr><th>ID</th><th>วันที่</th><th>หัวข้อ</th><th>สถานะ</th><th>หน่วยงาน</th></tr></thead><tbody id="tbody"></tbody></table><div id="pag-controls" class="pag"></div></div>
 </div></div>
 <script>
@@ -235,8 +235,17 @@ function renderMonthly(){
   let data=ALL; if(selD) data=data.filter(r=>r.dept===selD);
   const months=[...new Set(ALL.map(r=>monthKey(r.date)).filter(Boolean))].sort();
   let mData=selM? data.filter(r=>monthKey(r.date)===selM) : data;
-  const done=mData.filter(r=>r.status===3).length,proc=mData.filter(r=>r.status===1).length,wait=mData.filter(r=>r.status===0).length;
-  document.getElementById('m-met').innerHTML=`<div class="m"><div class="ml">ทั้งหมด</div><div class="mv">${mData.length.toLocaleString()}</div></div><div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" style="color:#16a34a">${done.toLocaleString()}</div></div><div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" style="color:#d97706">${proc.toLocaleString()}</div></div>`;
+  const done=mData.filter(r=>r.status===3).length,proc=mData.filter(r=>r.status===1).length,wait=mData.filter(r=>r.status===0).length,od=mData.filter(r=>r.od>0).length;
+  const successRate = mData.length ? Math.round((done / mData.length) * 100) : 0;
+  
+  document.getElementById('m-met').innerHTML=`
+    <div class="m"><div class="ml">ทั้งหมด</div><div class="mv" style="color:#2563eb">${mData.length.toLocaleString()}</div></div>
+    <div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" style="color:#16a34a">${done.toLocaleString()}</div></div>
+    <div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" style="color:#d97706">${proc.toLocaleString()}</div></div>
+    <div class="m"><div class="ml">รอดำเนินการ</div><div class="mv" style="color:#6366f1">${wait.toLocaleString()}</div></div>
+    <div class="m"><div class="ml">อัตราสำเร็จ</div><div class="mv" style="color:#16a34a">${successRate}%</div></div>
+    <div class="m"><div class="ml">เกินกำหนด</div><div class="mv" style="color:#dc2626">${od.toLocaleString()}</div></div>`;
+
   const mCount=countBy(data,r=>monthKey(r.date));
   destroyChart('mbar');charts['mbar']=new Chart(document.getElementById('c-mbar'),{type:'bar',data:{labels:months.map(monthLabel),datasets:[{label:'จำนวน',data:months.map(k=>mCount[k]||0),backgroundColor:months.map(k=>k==selM?'#2563eb':'rgba(37,99,235,0.4)')}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   const s3=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===3).length),s1=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===1).length),s0=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===0).length),s5=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===5).length);
