@@ -60,8 +60,8 @@ def fetch_live(days=730):
     first.raise_for_status()
     d = first.json()
     if d.get("status") == 500: raise Exception(d.get("message"))
-    total_pages = d["data"]["totalPages"]
-    rows = list(d["data"]["content"])
+    total_pages = d.get("data", {}).get("totalPages", 0)
+    rows = list(d.get("data", {}).get("content", []))
     for page in range(1, total_pages):
         r = requests.get(BASE_URL, params=build_params(page, start_ts, end_ts), headers=headers, timeout=30)
         r.raise_for_status()
@@ -139,6 +139,7 @@ th{background:#f9fafb;padding:12px;text-align:left;font-weight:600;color:#6b7280
 td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600;}
 .b0{background:#dbeafe;color:#1d4ed8;}.b1{background:#fef3c7;color:#92400e;}.b3{background:#dcfce7;color:#166534;}.b5{background:#f3f4f6;color:#374151;}
+.od{color:#dc2626;font-size:10px;font-weight:700;margin-left:3px;}
 .pag{display:flex;gap:5px;padding:15px;justify-content:center;align-items:center;}
 .pb{padding:5px 12px;border:1px solid #ddd;background:#fff;cursor:pointer;border-radius:4px;font-size:13px;}
 .pb.active{background:#2563eb;color:#fff;border-color:#2563eb;}
@@ -234,7 +235,7 @@ function populateMonthFilter(){
   const ds=document.getElementById('sel-mdept'),depts=[...new Set(ALL.map(r=>r.dept))].sort();
   ds.innerHTML='<option value="">ทุกหน่วยงาน</option>';depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;ds.appendChild(o);});
   const lds=document.getElementById('fl-dept');
-  lds.innerHTML='<option value="">ทุกหน่วยงาน</option>';depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;lds.appendChild(o);});
+  if(lds){lds.innerHTML='<option value="">ทุกหน่วยงาน</option>';depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;lds.appendChild(o);});}
 }
 function renderMonthly(){
   const selM=document.getElementById('sel-month').value,selD=document.getElementById('sel-mdept').value;
@@ -243,15 +244,7 @@ function renderMonthly(){
   let mData=selM? data.filter(r=>monthKey(r.date)===selM) : data;
   const done=mData.filter(r=>r.status===3).length,proc=mData.filter(r=>r.status===1).length,wait=mData.filter(r=>r.status===0).length,od=mData.filter(r=>r.od>0).length;
   const successRate = mData.length ? Math.round((done / mData.length) * 100) : 0;
-  
-  document.getElementById('m-met').innerHTML=`
-    <div class="m"><div class="ml">ทั้งหมด</div><div class="mv" style="color:#2563eb">${mData.length.toLocaleString()}</div></div>
-    <div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" style="color:#16a34a">${done.toLocaleString()}</div></div>
-    <div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" style="color:#d97706">${proc.toLocaleString()}</div></div>
-    <div class="m"><div class="ml">รอดำเนินการ</div><div class="mv" style="color:#6366f1">${wait.toLocaleString()}</div></div>
-    <div class="m"><div class="ml">อัตราสำเร็จ</div><div class="mv" style="color:#16a34a">${successRate}%</div></div>
-    <div class="m"><div class="ml">เกินกำหนด</div><div class="mv" style="color:#dc2626">${od.toLocaleString()}</div></div>`;
-
+  document.getElementById('m-met').innerHTML=`<div class="m"><div class="ml">ทั้งหมด</div><div class="mv" style="color:#2563eb">${mData.length.toLocaleString()}</div></div><div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" style="color:#16a34a">${done.toLocaleString()}</div></div><div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" style="color:#d97706">${proc.toLocaleString()}</div></div><div class="m"><div class="ml">รอดำเนินการ</div><div class="mv" style="color:#6366f1">${wait.toLocaleString()}</div></div><div class="m"><div class="ml">อัตราสำเร็จ</div><div class="mv" style="color:#16a34a">${successRate}%</div></div><div class="m"><div class="ml">เกินกำหนด</div><div class="mv" style="color:#dc2626">${od.toLocaleString()}</div></div>`;
   const mCount=countBy(data,r=>monthKey(r.date));
   destroyChart('mbar');charts['mbar']=new Chart(document.getElementById('c-mbar'),{type:'bar',data:{labels:months.map(monthLabel),datasets:[{label:'จำนวน',data:months.map(k=>mCount[k]||0),backgroundColor:months.map(k=>k==selM?'#2563eb':'rgba(37,99,235,0.4)')}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   const s3=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===3).length),s1=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===1).length),s0=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===0).length),s5=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===5).length);
@@ -265,4 +258,23 @@ loadData();
 </script></body></html>"""
 
 class Handler(BaseHTTPRequestHandler):
-...
+    def log_message(self, fmt, *args): pass
+    def do_GET(self):
+        parsed = urlparse(self.path); qs = parse_qs(parsed.query)
+        if parsed.path == "/":
+            self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.end_headers(); self.wfile.write(HTML_PAGE.encode("utf-8"))
+        elif parsed.path == "/api/data":
+            try:
+                data, ts = get_data(force="force" in qs)
+                self.send_response(200); self.send_header("Content-Type", "application/json"); self.send_header("Access-Control-Allow-Origin", "*"); self.end_headers()
+                self.wfile.write(json.dumps({"data": data, "ts": ts}).encode())
+            except Exception as e:
+                self.send_response(500); self.end_headers(); self.wfile.write(json.dumps({"error": str(e)}).encode())
+        else: self.send_response(404); self.end_headers()
+
+def main():
+    print(f"Server starting on port {PORT}..."); threading.Thread(target=background_refresh, daemon=True).start()
+    HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
+
+if __name__ == "__main__":
+    main()
