@@ -172,11 +172,15 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
   <div class="chart-grid"><div class="card"><h3>หัวข้อยอดนิยม</h3><div class="chart-wrap" style="height:260px"><canvas id="c-mtopic"></canvas></div></div><div class="card"><h3>หน่วยงานรับผิดชอบ</h3><div class="chart-wrap" style="height:260px"><canvas id="c-mdept"></canvas></div></div></div>
 </div></div>
 <div class="page" id="page-list"><div class="con">
-  <div class="fil" style="margin-bottom:15px;display:flex;gap:10px;"><input id="q" type="text" placeholder="🔍 ค้นหา ID / หัวข้อ..." style="flex:1;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb" oninput="applyFilter()"><select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รอดำเนินการ</option><option value="5">ยกเลิก</option></select></div>
-  <div class="tc"><table><thead><tr><th>ID</th><th>วันที่</th><th>หัวข้อ</th><th>สถานะ</th><th>หน่วยงาน</th></tr></thead><tbody id="tbody"></tbody></table><div id="pag-controls" class="pag"></div></div>
+  <div class="fil" style="margin-bottom:15px;display:flex;gap:10px;flex-wrap:wrap;">
+    <input id="q" type="text" placeholder="🔍 ค้นหา ID / หัวข้อ..." style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb" oninput="applyFilter()">
+    <select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รอดำเนินการ</option><option value="5">ยกเลิก</option></select>
+    <select id="fl-dept" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกหน่วยงาน</option></select>
+  </div>
+  <div class="tc"><table><thead><tr><th>ลำดับ</th><th>ID</th><th>วันที่</th><th>หัวข้อ</th><th>สถานะ</th><th>หน่วยงาน</th></tr></thead><tbody id="tbody"></tbody></table><div id="pag-controls" class="pag"></div></div>
 </div></div>
 <script>
-let ALL=[],FILT=[],PG=1,PER=20,charts={};
+let ALL=[],FILT=[],PG=1,PER=10,charts={};
 const SM={0:'รอดำเนินการ',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'];
 function fmtD(ts){return ts?new Date(ts).toLocaleDateString('th-TH',{year:'2-digit',month:'short',day:'numeric'}):'-';}
 function monthKey(ts){if(!ts)return null;const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');}
@@ -200,13 +204,13 @@ function updMetrics(){
   document.getElementById('m3').textContent=ALL.filter(r=>r.status===0).length.toLocaleString();
 }
 function applyFilter(){
-  const q=document.getElementById('q').value.toLowerCase(),fs=document.getElementById('fs').value;
-  FILT=ALL.filter(r=>(!q||String(r.id).includes(q)||r.topic.toLowerCase().includes(q))&&(fs===''||String(r.status)===fs));
+  const q=document.getElementById('q').value.toLowerCase(),fs=document.getElementById('fs').value,fd=document.getElementById('fl-dept').value;
+  FILT=ALL.filter(r=>(!q||String(r.id).includes(q)||r.topic.toLowerCase().includes(q))&&(fs===''||String(r.status)===fs)&&(!fd||r.dept===fd));
   PG=1;renderList();
 }
 function renderList(){
   const s=(PG-1)*PER,sl=FILT.slice(s,s+PER),total=Math.ceil(FILT.length/PER);
-  document.getElementById('tbody').innerHTML=sl.map(r=>`<tr><td><b>${r.id}</b></td><td>${fmtD(r.date)}</td><td>${r.topic}</td><td><span class="badge ${SC[r.status]||''}">${SM[r.status]||r.status}</span></td><td>${r.dept}</td></tr>`).join('');
+  document.getElementById('tbody').innerHTML=sl.map((r,i)=>`<tr><td style="color:#888">${s+i+1}</td><td><b>${r.id}</b></td><td>${fmtD(r.date)}</td><td>${r.topic}</td><td><span class="badge ${SC[r.status]||''}">${SM[r.status]||r.status}</span></td><td>${r.dept}</td></tr>`).join('');
   let h=`<button class="pb" onclick="goPG(1)" ${PG==1?'disabled':''}>«</button><button class="pb" onclick="goPG(${PG-1})" ${PG==1?'disabled':''}>‹</button>`;
   let start=Math.max(1,PG-2),end=Math.min(total,start+4);if(end-start<4)start=Math.max(1,end-4);
   for(let i=start;i<=end;i++)h+=`<button class="pb ${i==PG?'active':''}" onclick="goPG(${i})">${i}</button>`;
@@ -229,6 +233,8 @@ function populateMonthFilter(){
   s.innerHTML='<option value="">-- ทุกเดือน --</option>';mths.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=monthLabel(k);s.appendChild(o);});
   const ds=document.getElementById('sel-mdept'),depts=[...new Set(ALL.map(r=>r.dept))].sort();
   ds.innerHTML='<option value="">ทุกหน่วยงาน</option>';depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;ds.appendChild(o);});
+  const lds=document.getElementById('fl-dept');
+  lds.innerHTML='<option value="">ทุกหน่วยงาน</option>';depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;lds.appendChild(o);});
 }
 function renderMonthly(){
   const selM=document.getElementById('sel-month').value,selD=document.getElementById('sel-mdept').value;
@@ -259,23 +265,4 @@ loadData();
 </script></body></html>"""
 
 class Handler(BaseHTTPRequestHandler):
-    def log_message(self, fmt, *args): pass
-    def do_GET(self):
-        parsed = urlparse(self.path); qs = parse_qs(parsed.query)
-        if parsed.path == "/":
-            self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.end_headers(); self.wfile.write(HTML_PAGE.encode("utf-8"))
-        elif parsed.path == "/api/data":
-            try:
-                data, ts = get_data(force="force" in qs)
-                self.send_response(200); self.send_header("Content-Type", "application/json"); self.send_header("Access-Control-Allow-Origin", "*"); self.end_headers()
-                self.wfile.write(json.dumps({"data": data, "ts": ts}).encode())
-            except Exception as e:
-                self.send_response(500); self.end_headers(); self.wfile.write(json.dumps({"error": str(e)}).encode())
-        else: self.send_response(404); self.end_headers()
-
-def main():
-    print(f"Server starting on port {PORT}..."); threading.Thread(target=background_refresh, daemon=True).start()
-    HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
-
-if __name__ == "__main__":
-    main()
+...
