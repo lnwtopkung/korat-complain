@@ -60,8 +60,8 @@ def fetch_live(days=730):
     first.raise_for_status()
     d = first.json()
     if d.get("status") == 500: raise Exception(d.get("message"))
-    total_pages = d.get("data", {}).get("totalPages", 0)
-    rows = list(d.get("data", {}).get("content", []))
+    total_pages = d["data"]["totalPages"]
+    rows = list(d["data"]["content"])
     for page in range(1, total_pages):
         r = requests.get(BASE_URL, params=build_params(page, start_ts, end_ts), headers=headers, timeout=30)
         r.raise_for_status()
@@ -223,7 +223,7 @@ function renderDashCharts(){
   const mCnt=countBy(ALL,r=>monthKey(r.date)),mKeys=Object.keys(mCnt).sort();
   destroyChart('trend');charts['trend']=new Chart(document.getElementById('c-trend'),{type:'line',data:{labels:mKeys.map(monthLabel),datasets:[{label:'จำนวน',data:mKeys.map(k=>mCnt[k]),borderColor:'#2563eb',fill:true,backgroundColor:'rgba(37,99,235,.1)',tension:0.3}]},options:{maintainAspectRatio:false}});
   const sCnt={0:0,1:0,3:0,5:0};ALL.forEach(r=>{if(r.status in sCnt)sCnt[r.status]++});
-  destroyChart('status');charts['status']=new Chart(document.getElementById('c-status'),{type:'doughnut',data:{labels:['รอ','ทำ','เสร็จ','ยกเลิก'],datasets:[{data:[sCnt[0],sCnt[1],sCnt[3],sCnt[5]],backgroundColor:['#6366f1','#f59e0b','#22c55e','#9ca3af']}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'right'}}}});
+  destroyChart('status');charts['status']=new Chart(document.getElementById('c-status'),{type:'doughnut',data:{labels:['รอดำเนินการ','ระหว่างดำเนินการ','เสร็จสิ้น','ยกเลิก'],datasets:[{data:[sCnt[0],sCnt[1],sCnt[3],sCnt[5]],backgroundColor:['#6366f1','#f59e0b','#22c55e','#9ca3af']}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'right'}}}});
   const tCnt=countBy(ALL,r=>r.topic),tTop=Object.entries(tCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
   destroyChart('topic');charts['topic']=new Chart(document.getElementById('c-topic'),{type:'bar',data:{labels:tTop.map(e=>e[0]),datasets:[{data:tTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   const dCnt=countBy(ALL,r=>r.dept),dTop=Object.entries(dCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
@@ -232,6 +232,7 @@ function renderDashCharts(){
 function populateMonthFilter(){
   const s=document.getElementById('sel-month'),mths=[...new Set(ALL.map(r=>monthKey(r.date)).filter(Boolean))].sort();
   s.innerHTML='<option value="">-- ทุกเดือน --</option>';mths.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=monthLabel(k);s.appendChild(o);});
+  if(mths.length > 0) s.value = mths[mths.length - 1];
   const ds=document.getElementById('sel-mdept'),depts=[...new Set(ALL.map(r=>r.dept))].sort();
   ds.innerHTML='<option value="">ทุกหน่วยงาน</option>';depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;ds.appendChild(o);});
   const lds=document.getElementById('fl-dept');
