@@ -60,8 +60,8 @@ def fetch_live(days=730):
     first.raise_for_status()
     d = first.json()
     if d.get("status") == 500: raise Exception(d.get("message"))
-    total_pages = d.get("data", {}).get("totalPages", 0)
-    rows = list(d.get("data", {}).get("content", []))
+    total_pages = d["data"]["totalPages"]
+    rows = list(d["data"]["content"])
     for page in range(1, total_pages):
         r = requests.get(BASE_URL, params=build_params(page, start_ts, end_ts), headers=headers, timeout=30)
         r.raise_for_status()
@@ -165,6 +165,10 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
     <div class="card"><h3>หัวข้อร้องเรียนสูงสุด 10 อันดับ</h3><div class="chart-wrap" style="height:260px"><canvas id="c-topic"></canvas></div></div>
     <div class="card"><h3>หน่วยงานรับผิดชอบ</h3><div class="chart-wrap" style="height:260px"><canvas id="c-dept"></canvas></div></div>
   </div>
+  <div class="chart-grid">
+    <div class="card"><h3>แหล่งที่มา</h3><div class="chart-wrap" style="height:240px"><canvas id="c-src"></canvas></div></div>
+    <div class="card"><h3>รายวัน (30 วันล่าสุด)</h3><div class="chart-wrap" style="height:240px"><canvas id="c-daily"></canvas></div></div>
+  </div>
 </div></div>
 <div class="page" id="page-monthly"><div class="con">
   <div class="mfil"><label>เดือน:</label><select id="sel-month" onchange="renderMonthly()"></select><label>หน่วยงาน:</label><select id="sel-mdept" onchange="renderMonthly()"></select></div>
@@ -228,6 +232,14 @@ function renderDashCharts(){
   destroyChart('topic');charts['topic']=new Chart(document.getElementById('c-topic'),{type:'bar',data:{labels:tTop.map(e=>e[0]),datasets:[{data:tTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   const dCnt=countBy(ALL,r=>r.dept),dTop=Object.entries(dCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
   destroyChart('dept');charts['dept']=new Chart(document.getElementById('c-dept'),{type:'bar',data:{labels:dTop.map(e=>e[0]),datasets:[{data:dTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  
+  const srcCnt=countBy(ALL,r=>FM[r.src]||r.src),srcE=Object.entries(srcCnt).sort((a,b)=>b[1]-a[1]);
+  destroyChart('src');charts['src']=new Chart(document.getElementById('c-src'),{type:'doughnut',data:{labels:srcE.map(e=>e[0]),datasets:[{data:srcE.map(e=>e[1]),backgroundColor:COLORS}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'right'}}}});
+  
+  const now=Date.now(),day=86400000,dMap={};
+  for(let i=29;i>=0;i--){const k=new Date(now-i*day).toISOString().slice(0,10);dMap[k]=0;}
+  ALL.forEach(r=>{if(r.date){const k=new Date(r.date).toISOString().slice(0,10);if(k in dMap)dMap[k]++;}});
+  destroyChart('daily');charts['daily']=new Chart(document.getElementById('c-daily'),{type:'bar',data:{labels:Object.keys(dMap).map(k=>k.split('-').slice(1).reverse().join('/')),datasets:[{label:'จำนวน',data:Object.values(dMap),backgroundColor:'rgba(37,99,235,.6)',borderRadius:3}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}}}});
 }
 function populateMonthFilter(){
   const s=document.getElementById('sel-month'),mths=[...new Set(ALL.map(r=>monthKey(r.date)).filter(Boolean))].sort();
