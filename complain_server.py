@@ -155,7 +155,7 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
     <div class="m"><div class="ml">ทั้งหมด</div><div class="mv" id="m0" style="color:#2563eb">—</div></div>
     <div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" id="m1" style="color:#16a34a">—</div></div>
     <div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" id="m2" style="color:#d97706">—</div></div>
-    <div class="m"><div class="ml">รอรับเรื่อง</div><div class="mv" id="m3" style="color:#6366f1">—</div></div>
+    <div class="m"><div class="ml">รับเรื่อง</div><div class="mv" id="m3" style="color:#6366f1">—</div></div>
   </div>
   <div class="chart-grid">
     <div class="card"><h3>แนวโน้มรายเดือน</h3><div class="chart-wrap"><canvas id="c-trend"></canvas></div></div>
@@ -179,14 +179,14 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 <div class="page" id="page-list"><div class="con">
   <div class="fil" style="margin-bottom:15px;display:flex;gap:10px;flex-wrap:wrap;">
     <input id="q" type="text" placeholder="🔍 ค้นหา ID / หัวข้อ..." style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb" oninput="applyFilter()">
-    <select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รอรับเรื่อง</option><option value="5">ยกเลิก</option></select>
+    <select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รับเรื่อง</option><option value="5">ยกเลิก</option></select>
     <select id="fl-dept" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกหน่วยงาน</option></select>
   </div>
   <div class="tc"><table><thead><tr><th>ลำดับ</th><th>ID</th><th>วันที่</th><th>หัวข้อ</th><th>สถานะ</th><th>แหล่งที่มา</th><th>หน่วยงาน</th></tr></thead><tbody id="tbody"></tbody></table><div id="pag-controls" class="pag"></div></div>
 </div></div>
 <script>
 let ALL=[],FILT=[],PG=1,PER=10,charts={};
-const SM={0:'รอรับเรื่อง',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'],FM={0:'ไลน์ OA',1:'แอป',2:'เว็บ',3:'โทรศัพท์',4:'เดินเรื่อง',5:'ไลน์'};
+const SM={0:'รับเรื่อง',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'],FM={0:'ไลน์ OA',1:'แอป',2:'เว็บ',3:'โทรศัพท์',4:'เดินเรื่อง',5:'ไลน์'};
 function fmtD(ts){return ts?new Date(ts).toLocaleDateString('th-TH',{year:'2-digit',month:'short',day:'numeric'}):'-';}
 function monthKey(ts){if(!ts)return null;const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');}
 function monthLabel(k){if(!k)return'';const[y,m]=k.split('-');const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return mn[parseInt(m)-1]+' '+(parseInt(y)+543);}
@@ -227,7 +227,7 @@ function renderDashCharts(){
   const mCnt=countBy(ALL,r=>monthKey(r.date)),mKeys=Object.keys(mCnt).sort();
   destroyChart('trend');charts['trend']=new Chart(document.getElementById('c-trend'),{type:'line',data:{labels:mKeys.map(monthLabel),datasets:[{label:'จำนวน',data:mKeys.map(k=>mCnt[k]),borderColor:'#2563eb',fill:true,backgroundColor:'rgba(37,99,235,.1)',tension:0.3}]},options:{maintainAspectRatio:false}});
   const sCnt={0:0,1:0,3:0,5:0};ALL.forEach(r=>{if(r.status in sCnt)sCnt[r.status]++});
-  destroyChart('status');charts['status']=new Chart(document.getElementById('c-status'),{type:'doughnut',data:{labels:['รอรับเรื่อง','ระหว่างดำเนินการ','เสร็จสิ้น','ยกเลิก'],datasets:[{data:[sCnt[0],sCnt[1],sCnt[3],sCnt[5]],backgroundColor:['#6366f1','#f59e0b','#22c55e','#9ca3af']}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'right'}}}});
+  destroyChart('status');charts['status']=new Chart(document.getElementById('c-status'),{type:'doughnut',data:{labels:['รับเรื่อง','ระหว่างดำเนินการ','เสร็จสิ้น','ยกเลิก'],datasets:[{data:[sCnt[0],sCnt[1],sCnt[3],sCnt[5]],backgroundColor:['#6366f1','#f59e0b','#22c55e','#9ca3af']}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'right'}}}});
   const tCnt=countBy(ALL,r=>r.topic),tTop=Object.entries(tCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
   destroyChart('topic');charts['topic']=new Chart(document.getElementById('c-topic'),{type:'bar',data:{labels:tTop.map(e=>e[0]),datasets:[{data:tTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   const dCnt=countBy(ALL,r=>r.dept),dTop=Object.entries(dCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
@@ -257,11 +257,11 @@ function renderMonthly(){
   let mData=selM? data.filter(r=>monthKey(r.date)===selM) : data;
   const done=mData.filter(r=>r.status===3).length,proc=mData.filter(r=>r.status===1).length,wait=mData.filter(r=>r.status===0).length,od=mData.filter(r=>r.od>0).length;
   const successRate = mData.length ? Math.round((done / mData.length) * 100) : 0;
-  document.getElementById('m-met').innerHTML=`<div class="m"><div class="ml">ทั้งหมด</div><div class="mv" style="color:#2563eb">${mData.length.toLocaleString()}</div></div><div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" style="color:#16a34a">${done.toLocaleString()}</div></div><div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" style="color:#d97706">${proc.toLocaleString()}</div></div><div class="m"><div class="ml">รอรับเรื่อง</div><div class="mv" style="color:#6366f1">${wait.toLocaleString()}</div></div><div class="m"><div class="ml">อัตราสำเร็จ</div><div class="mv" style="color:#16a34a">${successRate}%</div></div><div class="m"><div class="ml">เกินกำหนด</div><div class="mv" style="color:#dc2626">${od.toLocaleString()}</div></div>`;
+  document.getElementById('m-met').innerHTML=`<div class="m"><div class="ml">ทั้งหมด</div><div class="mv" style="color:#2563eb">${mData.length.toLocaleString()}</div></div><div class="m"><div class="ml">เสร็จสิ้น</div><div class="mv" style="color:#16a34a">${done.toLocaleString()}</div></div><div class="m"><div class="ml">ระหว่างดำเนินการ</div><div class="mv" style="color:#d97706">${proc.toLocaleString()}</div></div><div class="m"><div class="ml">รับเรื่อง</div><div class="mv" style="color:#6366f1">${wait.toLocaleString()}</div></div><div class="m"><div class="ml">อัตราสำเร็จ</div><div class="mv" style="color:#16a34a">${successRate}%</div></div><div class="m"><div class="ml">เกินกำหนด</div><div class="mv" style="color:#dc2626">${od.toLocaleString()}</div></div>`;
   const mCount=countBy(data,r=>monthKey(r.date));
   destroyChart('mbar');charts['mbar']=new Chart(document.getElementById('c-mbar'),{type:'bar',data:{labels:months.map(monthLabel),datasets:[{label:'จำนวน',data:months.map(k=>mCount[k]||0),backgroundColor:months.map(k=>k==selM?'#2563eb':'rgba(37,99,235,0.4)')}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   const s3=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===3).length),s1=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===1).length),s0=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===0).length),s5=months.map(k=>data.filter(r=>monthKey(r.date)===k&&r.status===5).length);
-  destroyChart('mstack');charts['mstack']=new Chart(document.getElementById('c-mstack'),{type:'bar',data:{labels:months.map(monthLabel),datasets:[{label:'เสร็จสิ้น',data:s3,backgroundColor:'#22c55e'},{label:'ระหว่างดำเนินการ',data:s1,backgroundColor:'#f59e0b'},{label:'รอรับเรื่อง',data:s0,backgroundColor:'#6366f1'},{label:'ยกเลิก',data:s5,backgroundColor:'#9ca3af'}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}}}});
+  destroyChart('mstack');charts['mstack']=new Chart(document.getElementById('c-mstack'),{type:'bar',data:{labels:months.map(monthLabel),datasets:[{label:'เสร็จสิ้น',data:s3,backgroundColor:'#22c55e'},{label:'ระหว่างดำเนินการ',data:s1,backgroundColor:'#f59e0b'},{label:'รับเรื่อง',data:s0,backgroundColor:'#6366f1'},{label:'ยกเลิก',data:s5,backgroundColor:'#9ca3af'}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}}}});
   const tCnt=countBy(mData,r=>r.topic),tTop=Object.entries(tCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
   destroyChart('mtopic');charts['mtopic']=new Chart(document.getElementById('c-mtopic'),{type:'bar',data:{labels:tTop.map(e=>e[0]),datasets:[{data:tTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   const dCnt=countBy(mData,r=>r.dept),dTop=Object.entries(dCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
