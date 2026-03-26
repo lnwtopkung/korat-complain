@@ -19,7 +19,8 @@ BASE_URL = os.environ.get("COMPLAIN_API_URL", "https://prapa.koratcity.go.th/kor
 PORT = int(os.environ.get("PORT", 8765))
 CACHE_SEC = int(os.environ.get("CACHE_SEC", 10800))
 PAGE_SIZE = 100
-MIN_ID = 2512086
+# 1 ตุลาคม 2568 00:00:00 ICT = 1759251600000 ms
+START_DATE_LIMIT = 1759251600000 
 
 _cache = {"data": [], "ts": 0, "lock": threading.Lock(), "ready": False, "error": None}
 
@@ -55,19 +56,23 @@ def fetch_live(days=730):
                "x-requested-with": "XMLHttpRequest", "user-agent": "Mozilla/5.0",
                "referer": "https://prapa.koratcity.go.th/chart/view-statistic-complain.html"}
     end_ts = int(time.time() * 1000)
-    start_ts = end_ts - days * 86_400_000
+    start_ts = START_DATE_LIMIT # เริ่มดึงตั้งแต่ 1 ต.ค. 68
+    
     first = requests.get(BASE_URL, params=build_params(0, start_ts, end_ts), headers=headers, timeout=30)
     first.raise_for_status()
     d = first.json()
     if d.get("status") == 500: raise Exception(d.get("message"))
-    total_pages = d["data"]["totalPages"]
-    rows = list(d["data"]["content"])
+    
+    total_pages = d.get("data", {}).get("totalPages", 0)
+    rows = list(d.get("data", {}).get("content", []))
+    
     for page in range(1, total_pages):
         r = requests.get(BASE_URL, params=build_params(page, start_ts, end_ts), headers=headers, timeout=30)
         r.raise_for_status()
         content = r.json().get("data", {}).get("content", [])
         rows.extend(content)
-        if content and int(content[-1].get("complainId", 0)) < (MIN_ID - 1000): break
+        if content and content[-1].get("complainDate", 0) < START_DATE_LIMIT:
+            break
     return rows
 
 def perform_refresh():
@@ -75,19 +80,19 @@ def perform_refresh():
         rows = fetch_live()
         slim = []
         for r in rows:
-            cid = int(r.get("complainId", 0))
-            if cid >= MIN_ID:
-                slim.append({"id": cid, "date": r.get("complainDate",0),
+            dt = r.get("complainDate", 0)
+            if dt >= START_DATE_LIMIT:
+                slim.append({"id": int(r.get("complainId", 0)), "date": dt,
                              "topic": get_topic(r), "status": r.get("statusCode",0),
                              "src": r.get("from",0), "dept": get_dept(r),
                              "od": r.get("overDueDate",0) or 0,
                              "create": r.get("createDate",0)})
         with _cache["lock"]:
-            _cache["data"] = sorted(slim, key=lambda x: x["id"], reverse=True)
+            _cache["data"] = sorted(slim, key=lambda x: x["date"], reverse=True)
             _cache["ts"] = time.time()
             _cache["ready"] = True
             _cache["error"] = None
-        print(f"[CACHE] Success: {len(slim)} items")
+        print(f"[CACHE] Success: {len(slim)} items (Since 1 Oct 68)")
     except Exception as e:
         with _cache["lock"]: _cache["error"] = str(e)
         print(f"[CACHE ERROR] {e}")
@@ -147,7 +152,7 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 .mfil select{padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;}
 @media(max-width:700px){.chart-grid{grid-template-columns:1fr;}}
 </style></head><body>
-<div class="bar"><h1>📊 Dashboard ร้องเรียน (ตั้งแต่ #2512086)</h1><span id="upd">กำลังโหลด...</span><button class="tbtn" onclick="loadData(true)">↻ รีเฟรช</button></div>
+<div class="bar"><h1>📊 Dashboard ร้องเรียน (ตั้งแต่ 1 ต.ค. 68)</h1><span id="upd">กำลังโหลด...</span><button class="tbtn" onclick="loadData(true)">↻ รีเฟรช</button></div>
 <div id="pbar"></div>
 <div class="nav"><button class="nav-btn active" onclick="showPage('dash')">📊 Dashboard</button><button class="nav-btn" onclick="showPage('monthly')">📅 รายเดือน</button><button class="nav-btn" onclick="showPage('list')">📋 รายการ</button></div>
 <div class="page show" id="page-dash"><div class="con">
@@ -232,10 +237,8 @@ function renderDashCharts(){
   destroyChart('topic');charts['topic']=new Chart(document.getElementById('c-topic'),{type:'bar',data:{labels:tTop.map(e=>e[0]),datasets:[{data:tTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   const dCnt=countBy(ALL,r=>r.dept),dTop=Object.entries(dCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
   destroyChart('dept');charts['dept']=new Chart(document.getElementById('c-dept'),{type:'bar',data:{labels:dTop.map(e=>e[0]),datasets:[{data:dTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
-  
   const srcCnt=countBy(ALL,r=>FM[r.src]||r.src),srcE=Object.entries(srcCnt).sort((a,b)=>b[1]-a[1]);
   destroyChart('src');charts['src']=new Chart(document.getElementById('c-src'),{type:'doughnut',data:{labels:srcE.map(e=>e[0]),datasets:[{data:srcE.map(e=>e[1]),backgroundColor:COLORS}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'right'}}}});
-  
   const now=Date.now(),day=86400000,dMap={};
   for(let i=29;i>=0;i--){const k=new Date(now-i*day).toISOString().slice(0,10);dMap[k]=0;}
   ALL.forEach(r=>{if(r.date){const k=new Date(r.date).toISOString().slice(0,10);if(k in dMap)dMap[k]++;}});
