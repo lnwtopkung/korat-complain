@@ -105,7 +105,9 @@ def background_refresh():
 def get_data(force=False):
     if force: threading.Thread(target=perform_refresh).start()
     waited = 0
-    while not _cache["ready"] and waited < 120:
+    while not _cache["ready"] and waited < 40: # Wait up to 20s
+        with _cache["lock"]:
+            if _cache["error"] and not _cache["data"]: break
         time.sleep(0.5)
         waited += 1
     with _cache["lock"]:
@@ -190,8 +192,8 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
   <div class="tc"><table><thead><tr><th>ลำดับ</th><th>ID</th><th>วันที่</th><th>หัวข้อ</th><th>สถานะ</th><th>แหล่งที่มา</th><th>หน่วยงาน</th></tr></thead><tbody id="tbody"></tbody></table><div id="pag-controls" class="pag"></div></div>
 </div></div>
 <script>
-let ALL=[],FILT=[],PG=1,PER=10,charts={};
-const SM={0:'รับเรื่อง',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'],FM={0:'ไลน์ OA',1:'แอป',2:'เว็บ',3:'โทรศัพท์',4:'เดินเรื่อง',5:'ไลน์'};
+const SM={0:'รับเรื่อง',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'];
+const FM={0:'แอป', 1:'ไลน์ OA', 2:'โทรศัพท์', 3:'เดินเรื่อง/ด้วยตนเอง', 4:'เว็บไซต์', 5:'เฟซบุ๊ก', 6:'ไลน์ (ทั่วไป)'};
 function fmtD(ts){return ts?new Date(ts).toLocaleDateString('th-TH',{year:'2-digit',month:'short',day:'numeric'}):'-';}
 function monthKey(ts){if(!ts)return null;const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');}
 function monthLabel(k){if(!k)return'';const[y,m]=k.split('-');const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return mn[parseInt(m)-1]+' '+(parseInt(y)+543);}
@@ -218,9 +220,10 @@ function applyFilter(){
   FILT=ALL.filter(r=>(!q||String(r.id).includes(q)||r.topic.toLowerCase().includes(q))&&(fs===''||String(r.status)===fs)&&(!fd||r.dept===fd));
   PG=1;renderList();
 }
+function getSrcName(v){if(typeof v==='string' && isNaN(v)) return v; return FM[v] || 'อื่นๆ ('+v+')';}
 function renderList(){
   const s=(PG-1)*PER,sl=FILT.slice(s,s+PER),total=Math.ceil(FILT.length/PER);
-  document.getElementById('tbody').innerHTML=sl.map((r,i)=>`<tr><td style="color:#888">${s+i+1}</td><td><b>${r.id}</b></td><td>${fmtD(r.date)}</td><td>${r.topic}</td><td><span class="badge ${SC[r.status]||''}">${SM[r.status]||r.status}</span></td><td>${FM[r.src]||r.src}</td><td>${r.dept}</td></tr>`).join('');
+  document.getElementById('tbody').innerHTML=sl.map((r,i)=>`<tr><td style="color:#888">${s+i+1}</td><td><b>${r.id}</b></td><td>${fmtD(r.date)}</td><td>${r.topic}</td><td><span class="badge ${SC[r.status]||''}">${SM[r.status]||r.status}</span></td><td>${getSrcName(r.src)}</td><td>${r.dept}</td></tr>`).join('');
   let h=`<button class="pb" onclick="goPG(1)" ${PG==1?'disabled':''}>«</button><button class="pb" onclick="goPG(${PG-1})" ${PG==1?'disabled':''}>‹</button>`;
   let start=Math.max(1,PG-2),end=Math.min(total,start+4);if(end-start<4)start=Math.max(1,end-4);
   for(let i=start;i<=end;i++)h+=`<button class="pb ${i==PG?'active':''}" onclick="goPG(${i})">${i}</button>`;
@@ -237,7 +240,7 @@ function renderDashCharts(){
   destroyChart('topic');charts['topic']=new Chart(document.getElementById('c-topic'),{type:'bar',data:{labels:tTop.map(e=>e[0]),datasets:[{data:tTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
   const dCnt=countBy(ALL,r=>r.dept),dTop=Object.entries(dCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
   destroyChart('dept');charts['dept']=new Chart(document.getElementById('c-dept'),{type:'bar',data:{labels:dTop.map(e=>e[0]),datasets:[{data:dTop.map(e=>e[1]),backgroundColor:COLORS}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}}}});
-  const srcCnt=countBy(ALL,r=>FM[r.src]||r.src),srcE=Object.entries(srcCnt).sort((a,b)=>b[1]-a[1]);
+  const srcCnt=countBy(ALL,r=>getSrcName(r.src)),srcE=Object.entries(srcCnt).sort((a,b)=>b[1]-a[1]);
   destroyChart('src');charts['src']=new Chart(document.getElementById('c-src'),{type:'doughnut',data:{labels:srcE.map(e=>e[0]),datasets:[{data:srcE.map(e=>e[1]),backgroundColor:COLORS}]},options:{maintainAspectRatio:false,plugins:{legend:{position:'right'}}}});
   const now=Date.now(),day=86400000,dMap={};
   for(let i=29;i>=0;i--){const k=new Date(now-i*day).toISOString().slice(0,10);dMap[k]=0;}
