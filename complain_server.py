@@ -192,6 +192,7 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
   <div class="tc"><table><thead><tr><th>ลำดับ</th><th>ID</th><th>วันที่</th><th>หัวข้อ</th><th>สถานะ</th><th>แหล่งที่มา</th><th>หน่วยงาน</th></tr></thead><tbody id="tbody"></tbody></table><div id="pag-controls" class="pag"></div></div>
 </div></div>
 <script>
+let ALL=[],FILT=[],PG=1,PER=10,charts={};
 const SM={0:'รับเรื่อง',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'];
 const FM={0:'แอป', 1:'ไลน์ OA', 2:'โทรศัพท์', 3:'เดินเรื่อง/ด้วยตนเอง', 4:'เว็บไซต์', 5:'เฟซบุ๊ก', 6:'ไลน์ (ทั่วไป)'};
 function fmtD(ts){return ts?new Date(ts).toLocaleDateString('th-TH',{year:'2-digit',month:'short',day:'numeric'}):'-';}
