@@ -81,9 +81,12 @@ def perform_refresh():
     try:
         rows = fetch_live()
         slim = []
+        # ขยับเวลาเริ่มกรองถอยหลังไป 1 ชั่วโมง (23:00 น. ของวันที่ 30 ก.ย.) 
+        # เพื่อดักเก็บรายการที่อาจจะมีปัญหาเรื่อง Timezone หรือบันทึกเวลาคาบเกี่ยว
+        display_limit = START_DATE_LIMIT - 3600000 
         for r in rows:
             dt = r.get("complainDate", 0)
-            if dt >= START_DATE_LIMIT:
+            if dt >= display_limit:
                 slim.append({"id": int(r.get("complainId", 0)), "date": dt,
                              "topic": get_topic(r), "status": r.get("statusCode",0),
                              "src": r.get("from",0), "dept": get_dept(r),
