@@ -194,10 +194,10 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 <script>
 let ALL=[],FILT=[],PG=1,PER=10,charts={};
 const SM={0:'รับเรื่อง',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'];
-const FM={0:'แอป', 1:'ไลน์ OA', 2:'โทรศัพท์', 3:'เดินเรื่อง/ด้วยตนเอง', 4:'เว็บไซต์', 5:'เฟซบุ๊ก', 6:'ไลน์ (ทั่วไป)'};
+const FM={0:'ไลน์ OA', 1:'แอป', 2:'เว็บ', 3:'โทรศัพท์', 4:'เดินเรื่อง', 5:'ไลน์'};
 function fmtD(ts){return ts?new Date(ts).toLocaleDateString('th-TH',{year:'2-digit',month:'short',day:'numeric'}):'-';}
 function monthKey(ts){if(!ts)return null;const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');}
-function monthLabel(k){if(!k)return'';const[y,m]=k.split('-');const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return mn[parseInt(m)-1]+' '+(parseInt(y)+543);}
+function monthLabel(k){if(!k)return'';const[y,m]=k.split('-');const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return mn[parseInt(m)-1]+' '+(parseInt(y)+543);}
 function countBy(arr,fn){const m={};arr.forEach(r=>{const k=fn(r);if(k)m[k]=(m[k]||0)+1;});return m;}
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 function showPage(n){document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+n).classList.add('show');if(event && event.target)event.target.classList.add('active');if(n==='monthly')renderMonthly();}
@@ -217,8 +217,8 @@ function updMetrics(){
   document.getElementById('m3').textContent=ALL.filter(r=>r.status===0).length.toLocaleString();
 }
 function applyFilter(){
-  const q=document.getElementById('q').value.toLowerCase(),fs=document.getElementById('fs').value,fd=document.getElementById('fl-dept').value;
-  FILT=ALL.filter(r=>(!q||String(r.id).includes(q)||r.topic.toLowerCase().includes(q))&&(fs===''||String(r.status)===fs)&&(!fd||r.dept===fd));
+  const q=document.getElementById('q').value.toLowerCase(),fs=document.getElementById('fs').value,fd=document.getElementById('fl-dept').value,fsrc=document.getElementById('fl-src').value;
+  FILT=ALL.filter(r=>(!q||String(r.id).includes(q)||r.topic.toLowerCase().includes(q))&&(fs===''||String(r.status)===fs)&&(!fd||r.dept===fd)&&(!fsrc||String(r.src)===fsrc));
   PG=1;renderList();
 }
 function getSrcName(v){if(typeof v==='string' && isNaN(v)) return v; return FM[v] || 'อื่นๆ ('+v+')';}
@@ -256,6 +256,12 @@ function populateMonthFilter(){
   ds.innerHTML='<option value="">ทุกหน่วยงาน</option>';depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;ds.appendChild(o);});
   const lds=document.getElementById('fl-dept');
   if(lds){lds.innerHTML='<option value="">ทุกหน่วยงาน</option>';depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;lds.appendChild(o);});}
+  const lsrc=document.getElementById('fl-src');
+  if(lsrc){
+    const srcs=[...new Set(ALL.map(r=>r.src))].sort();
+    lsrc.innerHTML='<option value="">ทุกช่องทาง</option>';
+    srcs.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=getSrcName(v);lsrc.appendChild(o);});
+  }
 }
 function renderMonthly(){
   const selM=document.getElementById('sel-month').value,selD=document.getElementById('sel-mdept').value;
