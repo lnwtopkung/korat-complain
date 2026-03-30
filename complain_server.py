@@ -56,9 +56,10 @@ def fetch_live(days=730):
                "x-requested-with": "XMLHttpRequest", "user-agent": "Mozilla/5.0",
                "referer": "https://prapa.koratcity.go.th/chart/view-statistic-complain.html"}
     end_ts = int(time.time() * 1000)
-    start_ts = START_DATE_LIMIT
+    # เริ่มดึงข้อมูลถอยหลังไป 1 วัน (30 ก.ย.) เพื่อกันข้อมูลตกหล่นจาก Timezone
+    fetch_start_ts = START_DATE_LIMIT - 86400000 
     
-    first = requests.get(BASE_URL, params=build_params(0, start_ts, end_ts), headers=headers, timeout=30)
+    first = requests.get(BASE_URL, params=build_params(0, fetch_start_ts, end_ts), headers=headers, timeout=30)
     first.raise_for_status()
     d = first.json()
     if d.get("status") == 500: raise Exception(d.get("message"))
@@ -67,11 +68,12 @@ def fetch_live(days=730):
     rows = list(d.get("data", {}).get("content", []))
     
     for page in range(1, total_pages):
-        r = requests.get(BASE_URL, params=build_params(page, start_ts, end_ts), headers=headers, timeout=30)
+        r = requests.get(BASE_URL, params=build_params(page, fetch_start_ts, end_ts), headers=headers, timeout=30)
         r.raise_for_status()
         content = r.json().get("data", {}).get("content", [])
         rows.extend(content)
-        if content and content[-1].get("complainDate", 0) < START_DATE_LIMIT:
+        # ตรวจสอบว่าถึงจุดที่ข้อมูลเก่ากว่าที่เราต้องการจริงๆ หรือยัง
+        if content and content[-1].get("complainDate", 0) < fetch_start_ts:
             break
     return rows
 
