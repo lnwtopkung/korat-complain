@@ -56,7 +56,7 @@ def fetch_live(days=730):
                "x-requested-with": "XMLHttpRequest", "user-agent": "Mozilla/5.0",
                "referer": "https://prapa.koratcity.go.th/chart/view-statistic-complain.html"}
     end_ts = int(time.time() * 1000)
-    start_ts = START_DATE_LIMIT # เริ่มดึงตั้งแต่ 1 ต.ค. 68
+    start_ts = START_DATE_LIMIT
     
     first = requests.get(BASE_URL, params=build_params(0, start_ts, end_ts), headers=headers, timeout=30)
     first.raise_for_status()
@@ -92,7 +92,7 @@ def perform_refresh():
             _cache["ts"] = time.time()
             _cache["ready"] = True
             _cache["error"] = None
-        print(f"[CACHE] Success: {len(slim)} items (Since 1 Oct 68)")
+        print(f"[CACHE] Success: {len(slim)} items")
     except Exception as e:
         with _cache["lock"]: _cache["error"] = str(e)
         print(f"[CACHE ERROR] {e}")
@@ -105,7 +105,7 @@ def background_refresh():
 def get_data(force=False):
     if force: threading.Thread(target=perform_refresh).start()
     waited = 0
-    while not _cache["ready"] and waited < 40: # Wait up to 20s
+    while not _cache["ready"] and waited < 40:
         with _cache["lock"]:
             if _cache["error"] and not _cache["data"]: break
         time.sleep(0.5)
@@ -188,6 +188,7 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
     <input id="q" type="text" placeholder="🔍 ค้นหา ID / หัวข้อ..." style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb" oninput="applyFilter()">
     <select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รับเรื่อง</option><option value="5">ยกเลิก</option></select>
     <select id="fl-dept" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกหน่วยงาน</option></select>
+    <select id="fl-src" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกช่องทาง</option></select>
   </div>
   <div class="tc"><table><thead><tr><th>ลำดับ</th><th>ID</th><th>วันที่</th><th>หัวข้อ</th><th>สถานะ</th><th>แหล่งที่มา</th><th>หน่วยงาน</th></tr></thead><tbody id="tbody"></tbody></table><div id="pag-controls" class="pag"></div></div>
 </div></div>
