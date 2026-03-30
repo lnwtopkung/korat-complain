@@ -45,7 +45,8 @@ def build_params(page, start_ts, end_ts):
         cols[f"columns[{i}][orderable]"] = "true" if i <= 2 else "false"
         cols[f"columns[{i}][search][value]"] = ""
         cols[f"columns[{i}][search][regex]"] = "false"
-    return {**cols, "draw": page+1, "order[0][column]": 0, "order[0][dir]": "asc",
+    # เปลี่ยนจาก order[0][column]: 0 (function) เป็น 1 (createDate)
+    return {**cols, "draw": page+1, "order[0][column]": 1, "order[0][dir]": "asc",
             "start": page * PAGE_SIZE, "length": PAGE_SIZE, "search[value]": "", "search[regex]": "false",
             "sizeContents": PAGE_SIZE, "page": page, "keyWord": "", "startDate": start_ts,
             "endDate": end_ts, "orderBy": 2, "isGuest": 0, "_": int(time.time()*1000)}
@@ -67,27 +68,29 @@ def fetch_live(days=730):
     total_pages = d.get("data", {}).get("totalPages", 0)
     rows = list(d.get("data", {}).get("content", []))
     
+    # ดึงข้อมูลให้ครบทุกหน้าโดยไม่ break กลางคัน
     for page in range(1, total_pages):
         r = requests.get(BASE_URL, params=build_params(page, fetch_start_ts, end_ts), headers=headers, timeout=30)
         r.raise_for_status()
         content = r.json().get("data", {}).get("content", [])
+        if not content: break
         rows.extend(content)
-        # ตรวจสอบว่าถึงจุดที่ข้อมูลเก่ากว่าที่เราต้องการจริงๆ หรือยัง
-        if content and content[-1].get("complainDate", 0) < fetch_start_ts:
-            break
     return rows
 
 def perform_refresh():
     try:
         rows = fetch_live()
         slim = []
-        # ขยับเวลาเริ่มกรองถอยหลังไป 1 ชั่วโมง (23:00 น. ของวันที่ 30 ก.ย.) 
-        # เพื่อดักเก็บรายการที่อาจจะมีปัญหาเรื่อง Timezone หรือบันทึกเวลาคาบเกี่ยว
         display_limit = START_DATE_LIMIT - 3600000 
         for r in rows:
+            cid = r.get("complainId", 0)
+            # Debug Log สำหรับตรวจสอบ ID ที่ต้องการ
+            if str(cid) == "2510003":
+                print(f"[DEBUG] Found target ID: {cid}, Date: {r.get('complainDate')}")
+            
             dt = r.get("complainDate", 0)
             if dt >= display_limit:
-                slim.append({"id": int(r.get("complainId", 0)), "date": dt,
+                slim.append({"id": int(cid), "date": dt,
                              "topic": get_topic(r), "status": r.get("statusCode",0),
                              "src": r.get("from",0), "dept": get_dept(r),
                              "od": r.get("overDueDate",0) or 0,
