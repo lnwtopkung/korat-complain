@@ -190,6 +190,7 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
     <select id="fl-dept" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกหน่วยงาน</option></select>
     <select id="fl-src" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกช่องทาง</option></select>
   </div>
+  <div id="list-summary" style="margin-bottom:10px;font-size:13px;color:#666;font-weight:500;"></div>
   <div class="tc"><table><thead><tr><th>ลำดับ</th><th>ID</th><th>วันที่</th><th>หัวข้อ</th><th>สถานะ</th><th>แหล่งที่มา</th><th>หน่วยงาน</th></tr></thead><tbody id="tbody"></tbody></table><div id="pag-controls" class="pag"></div></div>
 </div></div>
 <script>
@@ -225,6 +226,7 @@ function applyFilter(){
 function getSrcName(v){if(typeof v==='string' && isNaN(v)) return v; return FM[v] || 'อื่นๆ ('+v+')';}
 function renderList(){
   const s=(PG-1)*PER,sl=FILT.slice(s,s+PER),total=Math.ceil(FILT.length/PER);
+  document.getElementById('list-summary').textContent = `พบข้อมูลทั้งหมด ${FILT.length.toLocaleString()} รายการ (หน้าที่ ${PG}/${total || 1})`;
   document.getElementById('tbody').innerHTML=sl.map((r,i)=>`<tr><td style="color:#888">${s+i+1}</td><td><b>${r.id}</b></td><td>${fmtD(r.date)}</td><td>${r.topic}</td><td><span class="badge ${SC[r.status]||''}">${SM[r.status]||r.status}</span></td><td>${getSrcName(r.src)}</td><td>${r.dept}</td></tr>`).join('');
   let h=`<button class="pb" onclick="goPG(1)" ${PG==1?'disabled':''}>«</button><button class="pb" onclick="goPG(${PG-1})" ${PG==1?'disabled':''}>‹</button>`;
   let start=Math.max(1,PG-2),end=Math.min(total,start+4);if(end-start<4)start=Math.max(1,end-4);
