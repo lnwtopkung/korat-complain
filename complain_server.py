@@ -145,7 +145,7 @@ table{width:100%;border-collapse:collapse;font-size:13px;}
 th{background:#f9fafb;padding:12px;text-align:left;font-weight:600;color:#6b7280;border-bottom:1px solid #f0f0f0;}
 td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600;}
-.b0{background:#dbeafe;color:#1d4ed8;}.b1{background:#fef3c7;color:#92400e;}.b3{background:#dcfce7;color:#166534;}.b5{background:#f3f4f6;color:#374151;}
+.b0{background:#dbeafe;color:#1d4ed8;}.b1{background:#fef3c7;color:#92400e;}.b3{background:#dcfce7;color:#166534;}.b5{background:#f3f4f6;color:#374151;}.b8{background:#fee2e2;color:#dc2626;}
 .od{color:#dc2626;font-size:10px;font-weight:700;margin-left:3px;}
 .pag{display:flex;gap:5px;padding:15px;justify-content:center;align-items:center;}
 .pb{padding:5px 12px;border:1px solid #ddd;background:#fff;cursor:pointer;border-radius:4px;font-size:13px;}
@@ -186,7 +186,7 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 <div class="page" id="page-list"><div class="con">
   <div class="fil" style="margin-bottom:15px;display:flex;gap:10px;flex-wrap:wrap;">
     <input id="q" type="text" placeholder="🔍 ค้นหา ID / หัวข้อ..." style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb" oninput="applyFilter()">
-    <select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รับเรื่อง</option><option value="5">ยกเลิก</option></select>
+    <select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รับเรื่อง</option><option value="5">ยกเลิก</option><option value="8">ไม่อยู่ในอำนาจหน้าที่</option></select>
     <select id="fl-dept" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกหน่วยงาน</option></select>
     <select id="fl-src" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกช่องทาง</option></select>
   </div>
@@ -194,8 +194,8 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 </div></div>
 <script>
 let ALL=[],FILT=[],PG=1,PER=10,charts={};
-const SM={0:'รับเรื่อง',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'];
-const FM={0:'แอปพลิเคชัน', 1:'เข้ามาโดยตรง', 2:'เว็บ', 3:'เว็บไซต์เทศบาล', 4:'เดินเรื่อง', 5:'ไลน์', 7:'หนังสือ', 10:'traffy fondue'};
+const SM={0:'รับเรื่อง',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก',8:'ไม่อยู่ในอำนาจหน้าที่รับผิดชอบ'},SC={0:'b0',1:'b1',3:'b3',5:'b5',8:'b8'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'];
+const FM={0:'แอปพลิเคชัน', 1:'เข้ามาโดยตรง', 2:'โทรศัพท์', 3:'เว็บไซต์เทศบาล', 4:'เฟสบุ๊ค', 5:'ไลน์', 7:'หนังสือ', 10:'traffy fondue'};
 function fmtD(ts){return ts?new Date(ts).toLocaleDateString('th-TH',{year:'2-digit',month:'short',day:'numeric'}):'-';}
 function monthKey(ts){if(!ts)return null;const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');}
 function monthLabel(k){if(!k)return'';const[y,m]=k.split('-');const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return mn[parseInt(m)-1]+' '+(parseInt(y)+543);}
