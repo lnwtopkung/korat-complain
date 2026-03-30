@@ -195,7 +195,7 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 <script>
 let ALL=[],FILT=[],PG=1,PER=10,charts={};
 const SM={0:'รับเรื่อง',1:'ระหว่างดำเนินการ',3:'เสร็จสิ้น',4:'ส่งกลับ',5:'ยกเลิก'},SC={0:'b0',1:'b1',3:'b3',5:'b5'},COLORS=['#378ADD','#1D9E75','#D85A30','#7F77DD','#D4537E','#BA7517','#888780','#E24B4A','#639922','#0F6E56'];
-const FM={0:'ไลน์ OA', 1:'แอป', 2:'เว็บ', 3:'โทรศัพท์', 4:'เดินเรื่อง', 5:'ไลน์'};
+const FM={0:'ไลน์ OA', 1:'แอป', 2:'เว็บ', 3:'โทรศัพท์', 4:'เดินเรื่อง', 5:'ไลน์', 7:'หนังสือ'};
 function fmtD(ts){return ts?new Date(ts).toLocaleDateString('th-TH',{year:'2-digit',month:'short',day:'numeric'}):'-';}
 function monthKey(ts){if(!ts)return null;const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');}
 function monthLabel(k){if(!k)return'';const[y,m]=k.split('-');const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];return mn[parseInt(m)-1]+' '+(parseInt(y)+543);}
