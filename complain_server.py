@@ -194,6 +194,7 @@ td{padding:10px 12px;border-bottom:1px solid #f5f5f5;}
 <div class="page" id="page-list"><div class="con">
   <div class="fil" style="margin-bottom:15px;display:flex;gap:10px;flex-wrap:wrap;">
     <input id="q" type="text" placeholder="🔍 ค้นหา ID / หัวข้อ..." style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb" oninput="applyFilter()">
+    <select id="fl-month" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกเดือน</option></select>
     <select id="fs" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกสถานะ</option><option value="3">เสร็จสิ้น</option><option value="1">ระหว่างดำเนิน</option><option value="0">รับเรื่อง</option><option value="5">ยกเลิก</option><option value="8">ไม่อยู่ในอำนาจหน้าที่</option></select>
     <select id="fl-dept" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกหน่วยงาน</option></select>
     <select id="fl-src" onchange="applyFilter()" style="padding:8px;border-radius:8px;border:1.5px solid #e5e7eb"><option value="">ทุกช่องทาง</option></select>
