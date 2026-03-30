@@ -228,8 +228,8 @@ function updMetrics(){
   document.getElementById('m3').textContent=ALL.filter(r=>r.status===0).length.toLocaleString();
 }
 function applyFilter(){
-  const q=document.getElementById('q').value.toLowerCase(),fs=document.getElementById('fs').value,fd=document.getElementById('fl-dept').value,fsrc=document.getElementById('fl-src').value;
-  FILT=ALL.filter(r=>(!q||String(r.id).includes(q)||r.topic.toLowerCase().includes(q))&&(fs===''||String(r.status)===fs)&&(!fd||r.dept===fd)&&(!fsrc||String(r.src)===fsrc));
+  const q=document.getElementById('q').value.toLowerCase(),fm=document.getElementById('fl-month').value,fs=document.getElementById('fs').value,fd=document.getElementById('fl-dept').value,fsrc=document.getElementById('fl-src').value;
+  FILT=ALL.filter(r=>(!q||String(r.id).includes(q)||r.topic.toLowerCase().includes(q)) && (!fm||monthKey(r.date)===fm) && (fs===''||String(r.status)===fs) && (!fd||r.dept===fd) && (!fsrc||String(r.src)===fsrc));
   PG=1;renderList();
 }
 function getSrcName(v){if(typeof v==='string' && isNaN(v)) return v; return FM[v] || 'อื่นๆ ('+v+')';}
@@ -264,6 +264,10 @@ function populateMonthFilter(){
   const s=document.getElementById('sel-month'),mths=[...new Set(ALL.map(r=>monthKey(r.date)).filter(Boolean))].sort();
   s.innerHTML='<option value="">-- ทุกเดือน --</option>';mths.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=monthLabel(k);s.appendChild(o);});
   if(mths.length > 0) s.value = mths[mths.length - 1];
+
+  const ls=document.getElementById('fl-month');
+  if(ls){ls.innerHTML='<option value="">ทุกเดือน</option>';mths.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=monthLabel(k);ls.appendChild(o);});}
+
   const ds=document.getElementById('sel-mdept'),depts=[...new Set(ALL.map(r=>r.dept))].sort();
   ds.innerHTML='<option value="">ทุกหน่วยงาน</option>';depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;ds.appendChild(o);});
   const lds=document.getElementById('fl-dept');
