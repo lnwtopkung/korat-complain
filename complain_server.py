@@ -19,8 +19,8 @@ BASE_URL = os.environ.get("COMPLAIN_API_URL", "https://prapa.koratcity.go.th/kor
 PORT = int(os.environ.get("PORT", 8765))
 CACHE_SEC = int(os.environ.get("CACHE_SEC", 10800))
 PAGE_SIZE = 100
-# 1 ตุลาคม 2568 00:00:00 ICT = 1759251600000 ms
-START_DATE_LIMIT = 1759251600000 
+# 1 ตุลาคม 2568 09:00:00 ICT = 1759284000000 ms
+START_DATE_LIMIT = 1759284000000 
 
 _cache = {"data": [], "ts": 0, "lock": threading.Lock(), "ready": False, "error": None}
 
